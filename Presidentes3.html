@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ordene os Presidentes do Brasil</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+  h1 { text-align: center; }
+  #cards { display: flex; flex-wrap: wrap; max-width: 1200px; margin: auto; }
+  .card { 
+    padding: 10px; margin: 5px; border-radius: 8px;
+    cursor: grab; width: 250px; text-align: center;
+    user-select: none; font-weight: bold; color: #fff;
+    transition: background-color 0.3s;
+  }
+  button { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; }
+  #resultado { text-align: center; font-size: 18px; margin-top: 10px; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>Ordene os Presidentes do Brasil</h1>
+<div id="cards"></div>
+<button onclick="verificarOrdem()">Verificar Ordem</button>
+<div id="resultado"></div>
+
+<script>
+window.onload = function() {
+  const presidentes = [
+    "Manuel Deodoro da Fonseca","Floriano Peixoto","Prudente José de Morais",
+    "Manuel Ferraz de Campos Sales","Francisco de Paula Rodrigues Alves","Afonso Augusto Moreira Pena",
+    "Nilo Procópio Peçanha","Hermes Rodrigues da Fonseca","Venceslau Brás Pereira Gomes",
+    "Delfim Moreira da Costa Ribeiro","Epitácio Lindolfo da Silva Pessoa","Artur da Silva Bernardes",
+    "Washington Luís Pereira de Sousa","Getúlio Dornelles Vargas (1930–1945)","José Linhares",
+    "Eurico Gaspar Dutra","Getúlio Dornelles Vargas (1951–1954)","Café Filho","Carlos Luz","Nereu Ramos",
+    "Juscelino Kubitschek de Oliveira","Jânio Quadros","João Goulart","Ranieri Mazzilli",
+    "Castelo Branco","Artur da Costa e Silva","Emílio Garrastazu Médici","Ernesto Geisel",
+    "João Batista Figueiredo","José Sarney","Fernando Collor de Mello","Itamar Franco",
+    "Fernando Henrique Cardoso","Luiz Inácio Lula da Silva (2003–2010)","Dilma Rousseff",
+    "Michel Temer","Jair Bolsonaro","Luiz Inácio Lula da Silva (2023–…)"
+  ];
+
+  // Paleta de cores para visual: azul e verde
+  const cores = ["#1E90FF","#4CAF50"];
+
+  // Embaralhar
+  let embaralhados = [...presidentes].sort(() => 0.5 - Math.random());
+
+  const container = document.getElementById('cards');
+  embaralhados.forEach((nome, i) => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.draggable = true;
+    div.id = 'card-' + i;
+    div.innerText = nome;
+
+    // Cor visual alternando azul e verde
+    div.style.backgroundColor = cores[i % cores.length];
+
+    div.addEventListener('dragstart', dragStart);
+    div.addEventListener('dragover', dragOver);
+    div.addEventListener('drop', drop);
+
+    container.appendChild(div);
+  });
+
+  let dragged;
+
+  function dragStart(e) { dragged = e.target; }
+  function dragOver(e) { e.preventDefault(); }
+  function drop(e) {
+    e.preventDefault();
+    if(dragged !== e.target){
+      let temp = e.target.innerText;
+      e.target.innerText = dragged.innerText;
+      dragged.innerText = temp;
+    }
+  }
+
+  window.verificarOrdem = function() {
+    let cards = document.querySelectorAll('.card');
+    let pontos = 0;
+    cards.forEach((card, index)=>{
+      if(card.innerText === presidentes[index]) pontos++;
+    });
+    document.getElementById('resultado').innerText = `Você acertou ${pontos} de ${presidentes.length} presidentes`;
+  }
+}
+</script>
+
+</body>
+</html>
