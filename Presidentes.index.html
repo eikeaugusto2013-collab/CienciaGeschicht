@@ -1,21 +1,33 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Ordene os Presidentes do Brasil</title>
 <style>
   body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
   h1 { text-align: center; }
-  #cards { display: flex; flex-wrap: wrap; max-width: 1200px; margin: auto; }
+  #cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
   .card { 
-    padding: 10px; margin: 5px; border-radius: 8px;
-    cursor: grab; width: 250px; text-align: center;
-    user-select: none; font-weight: bold; color: #fff;
-    transition: background-color 0.3s;
+    background: #1E90FF; color: white; border-radius: 10px; width: 200px;
+    text-align: center; cursor: grab; user-select: none;
+    padding: 10px; transition: transform 0.2s; 
   }
+  .card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #ddd;
+  }
+  .card:hover { transform: scale(1.05); }
   button { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; }
   #resultado { text-align: center; font-size: 18px; margin-top: 10px; font-weight: bold; }
+  .missing { 
+    width: 100%; height: 180px; display:flex; align-items:center; justify-content:center;
+    background:#ccc; color:#333; border-radius:8px; margin-bottom:8px; font-size:14px;
+  }
 </style>
 </head>
 <body>
@@ -41,21 +53,49 @@ window.onload = function() {
     "Michel Temer","Jair Bolsonaro","Luiz Inácio Lula da Silva (2023–…)"
   ];
 
-  // Paleta de cores para visual: azul e verde
   const cores = ["#1E90FF","#4CAF50"];
-
-  // Embaralhar
   let embaralhados = [...presidentes].sort(() => 0.5 - Math.random());
 
   const container = document.getElementById('cards');
+  container.innerHTML = "";
+
   embaralhados.forEach((nome, i) => {
     const div = document.createElement('div');
     div.className = 'card';
     div.draggable = true;
     div.id = 'card-' + i;
-    div.innerText = nome;
 
-    // Cor visual alternando azul e verde
+    // posição histórica (1..38)
+    const posHistorica = presidentes.indexOf(nome) + 1; // +1 porque indexOf é 0-based
+
+    // img element
+    const img = document.createElement('img');
+    img.alt = nome;
+    // tentar carregar N.JPG primeiro (ex: "35.JPG"), se falhar tenta "N.webp", se falhar mostra bloco "missing"
+    img.src = posHistorica + ".JPG";
+
+    // ao erro, tenta .webp; se também falhar, esconde a <img> e mostra placeholder
+    img.onerror = function() {
+      // se já tentamos .JPG e falhou, tente .webp uma vez
+      if (!this.dataset.triedWebp) {
+        this.dataset.triedWebp = "1";
+        this.src = posHistorica + ".webp";
+      } else {
+        // já tentou .webp também; substituir por placeholder visual
+        this.style.display = 'none';
+        const placeholder = document.createElement('div');
+        placeholder.className = 'missing';
+        placeholder.innerText = `Imagem ${posHistorica}.(jpg/webp) não encontrada`;
+        this.parentNode.insertBefore(placeholder, this);
+      }
+    };
+
+    const p = document.createElement('p');
+    p.innerText = nome;
+
+    div.appendChild(img);
+    div.appendChild(p);
+
     div.style.backgroundColor = cores[i % cores.length];
 
     div.addEventListener('dragstart', dragStart);
@@ -67,24 +107,26 @@ window.onload = function() {
 
   let dragged;
 
-  function dragStart(e) { dragged = e.target; }
+  function dragStart(e) { dragged = e.target.closest('.card'); }
   function dragOver(e) { e.preventDefault(); }
   function drop(e) {
     e.preventDefault();
-    if(dragged !== e.target){
-      let temp = e.target.innerText;
-      e.target.innerText = dragged.innerText;
-      dragged.innerText = temp;
+    const alvo = e.target.closest('.card');
+    if(dragged && alvo && dragged !== alvo){
+      const temp = alvo.innerHTML;
+      alvo.innerHTML = dragged.innerHTML;
+      dragged.innerHTML = temp;
     }
   }
 
   window.verificarOrdem = function() {
-    let cards = document.querySelectorAll('.card');
+    let cards = document.querySelectorAll('.card p');
     let pontos = 0;
     cards.forEach((card, index)=>{
       if(card.innerText === presidentes[index]) pontos++;
     });
-    document.getElementById('resultado').innerText = `Você acertou ${pontos} de ${presidentes.length} presidentes`;
+    document.getElementById('resultado').innerText = 
+      `Você acertou ${pontos} de ${presidentes.length} presidentes`;
   }
 }
 </script>
