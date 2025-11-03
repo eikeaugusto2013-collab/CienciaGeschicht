@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogo da Linha do Tempo Global</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align:center; background:#f0f0f0; margin:0; padding:0;}
+  h1 { background:#2196f3; color:white; padding:15px; margin:0; }
+  #menu { margin:30px; }
+  .idadeBtn { background:#4caf50; color:white; padding:12px 20px; border:none; border-radius:8px; margin:10px; cursor:pointer; font-size:16px; }
+  .idadeBtn:hover { background:#43a047; }
+  #jogo { display:none; margin:30px auto; max-width:700px; }
+  #evento { font-size:20px; margin:20px 0; }
+  .barra { position:relative; width:90%; height:10px; background:linear-gradient(to right,#4caf50,#2196f3); margin:40px auto; border-radius:5px; }
+  #marcador { position:absolute; top:-8px; width:16px; height:26px; background:#ff9800; border-radius:4px; cursor:grab; }
+  #resultado { font-size:18px; margin-top:20px; }
+  button { background:#2196f3; color:white; padding:10px 20px; border:none; border-radius:10px; font-size:16px; margin:10px; cursor:pointer; }
+  button:hover { background:#1976d2; }
+  #entradaAno { padding:6px; font-size:16px; width:100px; text-align:center; margin-top:10px; }
+  #pontuacao { font-size:18px; margin-top:15px; }
+  #voltar { background:#f44336; }
+  #voltar:hover { background:#d32f2f; }
+</style>
+</head>
+<body>
+<h1>Jogo da Linha do Tempo Global</h1>
+
+<div id="menu">
+  <h2>Escolha a Idade:</h2>
+  <button class="idadeBtn" onclick="iniciar('antiga')">Idade Antiga (-4000 a 476)</button>
+  <button class="idadeBtn" onclick="iniciar('media')">Idade Média (476 - 1453)</button>
+  <button class="idadeBtn" onclick="iniciar('moderna')">Idade Moderna (1453 - 1789)</button>
+  <button class="idadeBtn" onclick="iniciar('contemporanea')">Idade Contemporânea (1789 - 2025)</button>
+</div>
+
+<div id="jogo">
+  <p id="evento">Carregando evento...</p>
+  <div class="barra" id="barra">
+    <div id="marcador"></div>
+  </div>
+  <input type="number" id="entradaAno" placeholder="Digite o ano">
+  <p><strong>Ano estimado:</strong> <span id="anoEscolhido">0</span></p>
+  <button id="botao">Confirmar</button>
+  <button id="pular">Próximo</button>
+  <button id="voltar">Voltar ao Menu</button>
+  <p id="resultado"></p>
+  <p id="pontuacao">Pontos: 0</p>
+</div>
+
+<script>
+// ====== BANCO DE 30 EVENTOS POR ERA (Secular) ======
+const eventosPorIdade = {
+  antiga: [
+    { nome:"Fundação de Roma", ano:-753 }, { nome:"Construção das Pirâmides do Egito", ano:-2560 },
+    { nome:"Início da civilização Mesopotâmica", ano:-3100 }, { nome:"Início da civilização Chinesa", ano:-2100 },
+    { nome:"Código de Hamurabi", ano:-1754 }, { nome:"Primeiras Olimpíadas na Grécia", ano:-776 },
+    { nome:"Guerras Púnicas", ano:-264 }, { nome:"Alexandre, o Grande inicia conquistas", ano:-336 },
+    { nome:"Morte de Alexandre", ano:-323 }, { nome:"Início da Dinastia Han na China", ano:-206 },
+    { nome:"Criação do Alfabeto Grego", ano:-800 }, { nome:"Início do Império Persa", ano:-550 },
+    { nome:"Democracia Ateniense se consolida", ano:-508 }, { nome:"Batalha de Maratona", ano:-490 },
+    { nome:"Batalha de Termópilas", ano:-480 }, { nome:"Fim da República Romana", ano:-27 },
+    { nome:"Início do Império Romano", ano:-27 }, { nome:"Divisão do Império Romano", ano:285 },
+    { nome:"Édito de Milão (igualdade civil)", ano:313 }, { nome:"Fundação de Constantinopla", ano:330 },
+    { nome:"Invasões Bárbaras na Europa", ano:376 }, { nome:"Queda do Império Romano do Ocidente", ano:476 },
+    { nome:"Início do Coliseu em Roma", ano:72 }, { nome:"Início das Guerras Macedônicas", ano:-214 },
+    { nome:"Fim do reinado de Ramsés II", ano:-1213 }, { nome:"Início do Reino de Israel", ano:-1020 },
+    { nome:"Invenção da roda de oleiro", ano:-3500 }, { nome:"Criação do calendário egípcio", ano:-2700 },
+    { nome:"Expansão do Império Assírio", ano:-900 }, { nome:"Primeiras bibliotecas na Mesopotâmia", ano:-700 }
+  ],
+  media: [
+    { nome:"Queda do Império Romano do Ocidente", ano:476 }, { nome:"Início do Império Carolíngio", ano:800 },
+    { nome:"Primeira Cruzada", ano:1096 }, { nome:"Assinatura da Magna Carta", ano:1215 },
+    { nome:"Peste Negra na Europa", ano:1347 }, { nome:"Construção da Catedral de Notre-Dame", ano:1163 },
+    { nome:"Queda de Constantinopla", ano:1453 }, { nome:"Universidade de Oxford inicia atividades", ano:1096 },
+    { nome:"Início do Renascimento Italiano", ano:1300 }, { nome:"Fim da Reconquista na Península Ibérica", ano:1492 },
+    { nome:"Fundação do Império Mongol", ano:1206 }, { nome:"Batalha de Hastings", ano:1066 },
+    { nome:"Primeira representação teatral em Veneza", ano:1290 }, { nome:"Início da dinastia Song na China", ano:960 },
+    { nome:"Fundação de Timbuktu", ano:1100 }, { nome:"Início da dinastia Capetiana na França", ano:987 },
+    { nome:"Expansão Viking na Europa", ano:793 }, { nome:"Construção da Catedral de Chartres", ano:1194 },
+    { nome:"Início da imprensa de Gutenberg", ano:1440 }, { nome:"Fundação de Moscou como capital", ano:1147 },
+    { nome:"Reinado de Ricardo Coração de Leão na Inglaterra", ano:1189 }, { nome:"Início da dinastia Yuan na China", ano:1271 },
+    { nome:"Reconquista de Toledo", ano:1085 }, { nome:"Fundação do Sacro Império Romano-Germânico", ano:962 },
+    { nome:"Criação do calendário juliano", ano:-46 }, { nome:"Início da construção do Castelo de Windsor", ano:1070 },
+    { nome:"Início da Universidade de Bolonha", ano:1088 }, { nome:"Construção da Ponte de Alcântara", ano:104 }
+  ],
+  moderna: [
+    { nome:"Descoberta da América", ano:1492 }, { nome:"Fundação de Jamestown nos EUA", ano:1607 },
+    { nome:"Guerra dos Trinta Anos", ano:1618 }, { nome:"Independência dos EUA", ano:1776 },
+    { nome:"Início da Revolução Francesa", ano:1789 }, { nome:"Tratado de Tordesilhas", ano:1494 },
+    { nome:"Início da colonização inglesa na Austrália", ano:1788 }, { nome:"Fundação de São Petersburgo", ano:1703 },
+    { nome:"Início da Dinastia Qing na China", ano:1644 }, { nome:"Assinatura do Tratado de Utrecht", ano:1713 },
+    { nome:"Início do Iluminismo", ano:1685 }, { nome:"Guerra de Sucessão Espanhola", ano:1701 },
+    { nome:"Revolução Científica", ano:1543 }, { nome:"Companhia Holandesa das Índias Orientais", ano:1602 },
+    { nome:"Primeiro voo de balão de ar quente", ano:1783 }, { nome:"Revolta de Tupac Amaru II no Peru", ano:1780 },
+    { nome:"Primeira publicação de Newton", ano:1687 }, { nome:"Colonização francesa na América do Norte", ano:1608 },
+    { nome:"Construção do Palácio de Versalhes", ano:1661 }, { nome:"Colonização portuguesa no Brasil", ano:1500 },
+    { nome:"Descoberta da passagem do Noroeste", ano:1497 }, { nome:"Circunavegação de Magalhães", ano:1519 },
+    { nome:"Unificação do Japão (período Sengoku)", ano:1568 }, { nome:"Fundação da colônia de Nova Amsterdã", ano:1624 },
+    { nome:"Primeira máquina a vapor de Watt", ano:1769 }, { nome:"Criação do Banco da Inglaterra", ano:1694 },
+    { nome:"Início da Revolução Industrial", ano:1760 }, { nome:"Início da independência do Brasil", ano:1789 },
+    { nome:"Guerra Anglo-Espanhola", ano:1585 }, { nome:"Reforma Inglesa (política)", ano:1534 }
+  ],
+  contemporanea: [
+    { nome:"Início da Primeira Guerra Mundial", ano:1914 }, { nome:"Fim da Primeira Guerra Mundial", ano:1918 },
+    { nome:"Início da Segunda Guerra Mundial", ano:1939 }, { nome:"Fim da Segunda Guerra Mundial", ano:1945 },
+    { nome:"Criação da ONU", ano:1945 }, { nome:"Chegada do homem à Lua", ano:1969 },
+    { nome:"Queda do Muro de Berlim", ano:1989 }, { nome:"Fim da União Soviética", ano:1991 },
+    { nome:"Ataques de 11 de setembro", ano:2001 }, { nome:"Início da pandemia de COVID-19", ano:2020 },
+    { nome:"Criação da União Europeia", ano:1993 }, { nome:"Criação do Euro", ano:1999 },
+    { nome:"Primeiro voo do Concorde", ano:1969 }, { nome:"Início da Guerra do Vietnã", ano:1955 },
+    { nome:"Fim da Guerra do Vietnã", ano:1975 }, { nome:"Revolução Chinesa (industrial/política)", ano:1949 },
+    { nome:"Início da Guerra do Iraque", ano:2003 }, { nome:"Fim da Guerra do Iraque", ano:2011 },
+    { nome:"Primeira transmissão de TV", ano:1928 }, { nome:"Primeiro computador eletrônico", ano:1943 },
+    { nome:"Primeiro satélite Sputnik", ano:1957 }, { nome:"Crise dos Mísseis de Cuba", ano:1962 },
+    { nome:"Primeira viagem transatlântica de avião", ano:1919 }, { nome:"Assassinato de John F. Kennedy", ano:1963 },
+    { nome:"Atentado de Oklahoma City", ano:1995 }, { nome:"Primeiro voo comercial de avião a jato", ano:1952 },
+    { nome:"Desembarque de Normandia", ano:1944 }, { nome:"Tratado de Versalhes", ano:1919 },
+    { nome:"Início do Apartheid na África do Sul", ano:1948 }, { nome:"Fim do Apartheid na África do Sul", ano:1994 }
+  ]
+};
+
+// ====== VARIÁVEIS ======
+let idadeSelecionada, eventos, eventoAtual, anoMin, anoMax;
+let arrastando=false, pontos=0;
+
+const barra=document.getElementById("barra");
+const marcador=document.getElementById("marcador");
+const anoEscolhido=document.getElementById("anoEscolhido");
+const resultado=document.getElementById("resultado");
+const botao=document.getElementById("botao");
+const eventoTexto=document.getElementById("evento");
+const pontuacao=document.getElementById("pontuacao");
+const pular=document.getElementById("pular");
+const voltar=document.getElementById("voltar");
+
+// ====== INICIAR ======
+function iniciar(idade){
+  idadeSelecionada=idade;
+  document.getElementById("menu").style.display="none";
+  document.getElementById("jogo").style.display="block";
+
+  if(idade==="antiga"){ anoMin=-4000; anoMax=476; }
+  if(idade==="media"){ anoMin=476; anoMax=1453; }
+  if(idade==="moderna"){ anoMin=1453; anoMax=1789; }
+  if(idade==="contemporanea"){ anoMin=1789; anoMax=2025; }
+
+  eventos=eventosPorIdade[idade].sort(()=>Math.random()-0.5).slice(0,10);
+  pontos=0; pontuacao.textContent=`Pontos: ${pontos}`;
+  novoEvento();
+}
+
+// ====== NOVO EVENTO ======
+function novoEvento(){
+  resultado.textContent="";
+  eventoAtual=eventos.pop();
+  if(!eventoAtual){
+    eventoTexto.textContent=`Fim do jogo! Pontuação final: ${pontos}`;
+    document.getElementById("barra").style.display="none";
+    document.getElementById("botao").style.display="none";
+    document.getElementById("pular").style.display="none";
+    document.getElementById("entradaAno").style.display="none";
+    return;
+  }
+  eventoTexto.textContent=`Em que ano aconteceu: ${eventoAtual.nome}?`;
+  setMarcador((barra.offsetWidth-marcador.offsetWidth)/2);
+}
+
+// ====== MARCADOR CORRIGIDO ======
+function setMarcador(pos){
+  const largura = barra.offsetWidth - marcador.offsetWidth;
+  const posLimit = Math.max(0, Math.min(largura, pos)); // travar dentro da barra
+  marcador.style.left = posLimit + "px";
+
+  let proporcao = posLimit / largura;
+  let ano = Math.round(anoMin + proporcao*(anoMax-anoMin));
+
+  // travar ano nos limites
+  if(ano < anoMin) ano = anoMin;
+  if(ano > anoMax) ano = anoMax;
+
+  anoEscolhido.textContent = ano;
+}
+
+marcador.addEventListener("mousedown",()=>arrastando=true);
+document.addEventListener("mouseup",()=>arrastando=false);
+document.addEventListener("mousemove",e=>{
+  if(!arrastando) return;
+  const rect=barra.getBoundingClientRect();
+  const pos=e.clientX-rect.left;
+  setMarcador(pos);
+});
+
+// ====== ENTRADA MANUAL ======
+document.getElementById("entradaAno").addEventListener("input",e=>{
+  let valor=parseInt(e.target.value);
+  if(isNaN(valor)) return;
+  if(valor<anoMin) valor=anoMin;
+  if(valor>anoMax) valor=anoMax;
+  const largura=barra.offsetWidth-marcador.offsetWidth;
+  const proporcao=(valor-anoMin)/(anoMax-anoMin);
+  setMarcador(proporcao*largura);
+});
+
+// ====== BOTÕES ======
+botao.addEventListener("click",()=>{
+  const escolhido=parseInt(anoEscolhido.textContent);
+  const diferenca=Math.abs(escolhido-eventoAtual.ano);
+  if(diferenca===0){ resultado.textContent=`🎯 Perfeito! Era ${eventoAtual.ano}. +3 pontos!`; pontos+=3; }
+  else if(diferenca<=5){ resultado.textContent=`👏 Quase! Era ${eventoAtual.ano}. (Dif ${diferenca}) +2 pontos.`; pontos+=2; }
+  else if(diferenca<=20){ resultado.textContent=`👍 Foi em ${eventoAtual.ano}. (Dif ${diferenca}) +1 ponto.`; pontos+=1; }
+  else{ resultado.textContent=`❌ Errou! O certo era ${eventoAtual.ano}.`; }
+  pontuacao.textContent=`Pontos: ${pontos}`;
+});
+
+pular.addEventListener("click",novoEvento);
+
+voltar.addEventListener("click",()=>{
+  document.getElementById("jogo").style.display="none";
+  document.getElementById("menu").style.display="block";
+  document.getElementById("barra").style.display="block";
+  document.getElementById("botao").style.display="inline-block";
+  document.getElementById("pular").style.display="inline-block";
+  document.getElementById("entradaAno").style.display="inline-block";
+});
+</script>
+</body>
+</html>
